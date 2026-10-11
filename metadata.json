@@ -1,0 +1,6 @@
+{
+  "name": "Bharat Pathology - Local Pathology Laboratory in Ballia",
+  "description": "Contact Bharat Pathology at Bhimpura No. 1, Balauli Road, Ballia for laboratory testing and home sample collection. Call or WhatsApp to enquire.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

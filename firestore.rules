@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isPrimaryOwner() {
+      return isSignedIn() && (
+        request.auth.token.email == 'sangamtrial@gmail.com' ||
+        request.auth.token.email == 'sangamtrail@gmail.com'
+      );
+    }
+
+    function getAdminData() {
+      return get(/databases/$(database)/documents/admins/$(request.auth.uid)).data;
+    }
+
+    function isActiveAdmin() {
+      return isSignedIn() && (
+        isPrimaryOwner() ||
+        (
+          exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+          && getAdminData().active == true
+        )
+      );
+    }
+
+    function isOwner() {
+      return isSignedIn() && (
+        isPrimaryOwner() ||
+        (
+          isActiveAdmin()
+          && getAdminData().role == 'owner'
+        )
+      );
+    }
+
+    // Public booking creation validator
+    function isValidPublicBooking(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.phone is string && data.phone.size() >= 10 && data.phone.size() <= 15
+        && data.gender is string && (data.gender == 'Female' || data.gender == 'Male' || data.gender == 'Other' || data.gender == 'Prefer not to say')
+        && data.age is number && data.age > 0 && data.age <= 120
+        && data.testOrPackage is string && data.testOrPackage.size() > 0 && data.testOrPackage.size() <= 150
+        && data.preferredDate is string && data.preferredDate.size() > 0 && data.preferredDate.size() <= 20
+        && data.address is string && data.address.size() > 0 && data.address.size() <= 500
+        && data.paymentPreference is string && (data.paymentPreference == 'upi' || data.paymentPreference == 'store')
+        && data.status is string && data.status == 'New'
+        && (!('isDeleted' in data) || data.isDeleted == false)
+        && (!('amountReceived' in data) || data.amountReceived == 0);
+    }
+
+    // 1. Bookings Collection
+    match /bookings/{bookingId} {
+      // Public visitors can only create a booking with validated fields and status forced to 'New'
+      allow create: if isValidId(bookingId) && (isValidPublicBooking(request.resource.data) || isActiveAdmin());
+      // Only active authenticated admins can read, list, and update bookings
+      allow read, update: if isActiveAdmin();
+      // Only laboratory owners can permanently delete bookings
+      allow delete: if isOwner();
+    }
+
+    // Backwards-compatible collectionRequests
+    match /collectionRequests/{requestId} {
+      allow create: if isValidId(requestId);
+      allow read, update: if isActiveAdmin();
+      allow delete: if isOwner();
+    }
+
+    // 2. Administrators Access Control
+    match /admins/{adminId} {
+      // Admins can read their own profile to verify permissions, owners can list all staff
+      allow read: if isSignedIn() && (request.auth.uid == adminId || isOwner());
+      // Owners can manage all staff; the primary lab owner can self-initialize their profile
+      allow write: if isOwner() || (isSignedIn() && request.auth.uid == adminId && (
+        request.auth.token.email == 'sangamtrial@gmail.com' ||
+        request.auth.token.email == 'sangamtrail@gmail.com'
+      ));
+    }
+
+    // 3. Lab Settings & Configuration
+    match /settings/{settingId} {
+      // Public can read general settings for announcement banners, hours, and contact
+      allow read: if true;
+      // Only owners can modify lab configuration and capacity
+      allow write: if isOwner();
+    }
+
+    // 4. Message Templates
+    match /messageTemplates/{templateId} {
+      allow read: if isActiveAdmin();
+      allow write: if isOwner();
+    }
+
+    // 5. Immutable Audit Logs
+    match /auditLogs/{logId} {
+      // Any active admin action can write an immutable audit entry
+      allow create: if isActiveAdmin();
+      // Only the lab owner can read the audit trail
+      allow read: if isOwner();
+      // Audit logs can NEVER be updated or deleted by anyone
+      allow update, delete: if false;
+    }
+
+    // 6. Packages and Tests Catalog
+    match /packages/{packageId} {
+      allow read: if true;
+      allow write: if isOwner();
+    }
+
+    match /tests/{testId} {
+      allow read: if true;
+      allow write: if isOwner();
+    }
+  }
+}

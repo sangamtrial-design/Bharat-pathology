@@ -1,0 +1,108 @@
+{
+  "entities": {
+    "booking": {
+      "title": "Booking",
+      "description": "Patient pathology test and sample collection booking",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 15 },
+        "gender": { "type": "string", "enum": ["Female", "Male", "Other", "Prefer not to say"] },
+        "age": { "type": "number" },
+        "testOrPackage": { "type": "string", "maxLength": 150 },
+        "preferredDate": { "type": "string", "maxLength": 20 },
+        "address": { "type": "string", "maxLength": 500 },
+        "paymentPreference": { "type": "string", "enum": ["upi", "store"] },
+        "transactionRef": { "type": "string", "maxLength": 64 },
+        "message": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["New", "Contacted", "Confirmed", "Collector Assigned", "Sample Collected", "Processing", "Report Ready", "Completed", "Rescheduled", "Cancelled", "No-show"]
+        },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["Unpaid", "UPI Pending Verification", "Paid (Verified)", "Pay at Lab", "Amount Mismatch", "Refunded", "Adjusted"]
+        },
+        "amountQuoted": { "type": "number" },
+        "amountReceived": { "type": "number" },
+        "collectionCharge": { "type": "number" },
+        "discount": { "type": "number" },
+        "confirmedDate": { "type": "string" },
+        "confirmedTimeSlot": { "type": "string" },
+        "assignedCollector": { "type": "string" },
+        "priority": { "type": "string", "enum": ["Normal", "Urgent"] },
+        "reportStatus": { "type": "string", "enum": ["Not Started", "In Progress", "Ready", "Delivered"] },
+        "reportDeliveryMode": { "type": "string", "enum": ["WhatsApp", "Printed copy", "Other"] },
+        "isDeleted": { "type": "boolean" }
+      },
+      "required": ["name", "phone", "gender", "age", "testOrPackage", "preferredDate", "address", "paymentPreference", "status"]
+    },
+    "admin": {
+      "title": "Administrator",
+      "description": "Authorized laboratory owner or staff member profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["owner", "staff"] },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email", "name", "role", "active"]
+    },
+    "settings": {
+      "title": "Laboratory Settings",
+      "description": "Global business configuration and announcement parameters",
+      "type": "object",
+      "properties": {
+        "labName": { "type": "string" },
+        "tagline": { "type": "string" },
+        "phone": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "address": { "type": "string" },
+        "hours": { "type": "string" },
+        "upiPayeeName": { "type": "string" },
+        "upiId": { "type": "string" },
+        "defaultCollectionCharge": { "type": "number" },
+        "announcementActive": { "type": "boolean" },
+        "announcementText": { "type": "string" }
+      }
+    },
+    "auditLog": {
+      "title": "Audit Log Entry",
+      "description": "Immutable event record for operations tracking",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "action": { "type": "string" },
+        "entityId": { "type": "string" },
+        "by": { "type": "string" },
+        "byEmail": { "type": "string" },
+        "at": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["action", "entityId", "by", "at", "details"]
+    }
+  },
+  "firestore": {
+    "/bookings/{bookingId}": {
+      "schema": "booking",
+      "description": "Collection of patient bookings and home sample collections"
+    },
+    "/admins/{adminId}": {
+      "schema": "admin",
+      "description": "Authorized staff and owner accounts"
+    },
+    "/settings/{settingId}": {
+      "schema": "settings",
+      "description": "System-wide business settings and public parameters"
+    },
+    "/auditLogs/{logId}": {
+      "schema": "auditLog",
+      "description": "Audit trail log records"
+    }
+  }
+}
