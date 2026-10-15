@@ -100,7 +100,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         let adminSnap = await getDoc(adminDocRef);
 
         const userEmail = (currentUser.email || '').toLowerCase().trim();
-        const isPrimaryOwner = userEmail === 'sangamtrial@gmail.com' || userEmail === 'sangamtrail@gmail.com';
+        const isPrimaryOwner = userEmail === 'sangamtrial@gmail.com' || userEmail === 'sangamtrail@gmail.com' || userEmail === 'admin@bharatpathology.com';
 
         // Auto-bootstrap the primary owner if not already initialized
         if (!adminSnap.exists() && isPrimaryOwner) {
@@ -156,7 +156,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       } catch (err) {
         console.warn('Admin record lookup error:', err);
         const userEmail = (currentUser.email || '').toLowerCase().trim();
-        if (userEmail === 'sangamtrial@gmail.com' || userEmail === 'sangamtrail@gmail.com') {
+        if (userEmail === 'sangamtrial@gmail.com' || userEmail === 'sangamtrail@gmail.com' || userEmail === 'admin@bharatpathology.com') {
           setAdminData({
             uid: currentUser.uid,
             email: currentUser.email || userEmail,

@@ -18,7 +18,8 @@ service cloud.firestore {
     function isPrimaryOwner() {
       return isSignedIn() && (
         request.auth.token.email == 'sangamtrial@gmail.com' ||
-        request.auth.token.email == 'sangamtrail@gmail.com'
+        request.auth.token.email == 'sangamtrail@gmail.com' ||
+        request.auth.token.email == 'admin@bharatpathology.com'
       );
     }
 

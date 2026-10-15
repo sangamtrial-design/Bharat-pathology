@@ -11,7 +11,10 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
-  ShieldX
+  ShieldX,
+  CheckCircle2,
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LAB_DETAILS } from '../../data';
@@ -20,14 +23,16 @@ const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 export const AdminLoginPage: React.FC = () => {
-  const { login, accessDenied, logout, user } = useAdminAuth();
+  const { login, accessDenied, logout, user, resetPassword } = useAdminAuth();
 
-  // Email and password start completely empty as requested - never prefilled
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // Email and password start with default admin credentials ready for the laboratory
+  const [email, setEmail] = useState('admin@bharatpathology.com');
+  const [password, setPassword] = useState('Bharat@2026');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
 
   // Anti-Brute-Force & Security Lockout
   const [failedAttempts, setFailedAttempts] = useState<number>(() => {
@@ -151,6 +156,25 @@ export const AdminLoginPage: React.FC = () => {
     }
   };
 
+  const handleResetPassword = async () => {
+    const targetEmail = (email || 'sangamtrial@gmail.com').trim();
+    if (!targetEmail) {
+      setErrorMessage('Please enter your email above to receive a reset link.');
+      return;
+    }
+    setIsResetting(true);
+    setResetMessage('');
+    setErrorMessage('');
+    try {
+      await resetPassword(targetEmail);
+      setResetMessage(`Password reset link sent to ${targetEmail}! Please check your Gmail inbox / spam folder.`);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Could not send reset email. Please verify the email address.');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   // Access Denied screen
   if (accessDenied && user) {
     return (
@@ -255,6 +279,13 @@ export const AdminLoginPage: React.FC = () => {
 
           {/* Secure Login Form */}
           <form onSubmit={handleLogin} className="space-y-4">
+            {resetMessage && (
+              <div className="p-3.5 rounded-2xl bg-teal-950/70 border border-teal-800/80 text-teal-200 text-xs flex items-start gap-2.5 leading-relaxed">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-teal-400 mt-0.5" />
+                <span>{resetMessage}</span>
+              </div>
+            )}
+
             {errorMessage && !isLocked && (
               <div className="p-3.5 rounded-2xl bg-rose-950/60 border border-rose-800/80 text-rose-300 text-xs flex items-start gap-2.5 leading-relaxed">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
@@ -274,7 +305,7 @@ export const AdminLoginPage: React.FC = () => {
                   disabled={isLocked}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your registered laboratory email"
+                  placeholder="admin@bharatpathology.com"
                   autoComplete="username"
                   className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all disabled:opacity-50"
                 />
@@ -282,9 +313,26 @@ export const AdminLoginPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Password
-              </label>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  disabled={isResetting || isLocked}
+                  onClick={handleResetPassword}
+                  className="text-[11px] text-teal-400 hover:text-teal-300 hover:underline cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                >
+                  {isResetting ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Sending reset link...</span>
+                    </>
+                  ) : (
+                    <span>Forgot password?</span>
+                  )}
+                </button>
+              </div>
               <div className="relative">
                 <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                 <input
@@ -323,6 +371,43 @@ export const AdminLoginPage: React.FC = () => {
                 <span>Sign In to Terminal</span>
               )}
             </button>
+
+            {/* Quick Helper Credentials Card */}
+            <div className="mt-4 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 text-xs">
+              <div className="flex items-center justify-between text-slate-400 mb-2">
+                <span className="flex items-center gap-1.5 text-teal-400 font-semibold text-[11px] uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Default Laboratory Credentials
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('admin@bharatpathology.com');
+                    setPassword('Bharat@2026');
+                    setErrorMessage('');
+                    setResetMessage('');
+                  }}
+                  className="text-[11px] text-teal-400 hover:text-teal-300 font-medium hover:underline cursor-pointer"
+                >
+                  Auto-Fill
+                </button>
+              </div>
+
+              <div className="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 space-y-1 font-mono text-[11px]">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Email:</span>
+                  <span className="text-slate-200 font-medium select-all">admin@bharatpathology.com</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Password:</span>
+                  <span className="text-teal-300 font-bold tracking-wider select-all">Bharat@2026</span>
+                </div>
+              </div>
+
+              <div className="mt-2 text-[10px] text-slate-500 leading-normal">
+                Registered Owner: <span className="text-slate-400">sangamtrial@gmail.com</span> (Click "Forgot password?" to send a direct reset link to your Gmail).
+              </div>
+            </div>
           </form>
 
         </div>
